@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">"SitesInteressantes "</string>
+    <string name="novo_site">Novo site</string>
+    <string name="title_activity_novo_site">Novo site</string>
+    <string name="url">Endereço</string>
+    <string name="hint_novo_site">Digite a url do novo site aqui!</string>
+    <string name="ok">OK</string>
+    <string name="favorito">Favorito</string>
+    <string name="title_activity_sites_interessantes">Sites Interessantes</string>
+</resources>
