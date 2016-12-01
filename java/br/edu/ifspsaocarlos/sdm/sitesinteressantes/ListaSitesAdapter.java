@@ -36,6 +36,7 @@ public class ListaSitesAdapter extends ArrayAdapter<Site> {
         Site site = getItem(position);
         holder.url_site.setText(site.getUrl());
         holder.botao_site.setImageResource(site.getImagemFavorito());
+        holder.botao_site.setLabelFor(position);
         return convertView;
     }
 

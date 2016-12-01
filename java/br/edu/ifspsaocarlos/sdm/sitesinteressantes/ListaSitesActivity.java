@@ -1,18 +1,25 @@
 package br.edu.ifspsaocarlos.sdm.sitesinteressantes;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import br.edu.ifspsaocarlos.sdm.sitesinteressantes.model.Site;
 
@@ -20,13 +27,22 @@ public class ListaSitesActivity extends ListActivity {
     private static final int INTENT_NOVO_SITE = 0;
     private static final int INTENT_NAVEGADOR = 1;
     private List<Site> listaSites;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+    private Set<String> sitesURL;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Cria a lista inicial de sites que vai aparecer no tela
         listaSites = new ArrayList<Site>();
-        listaSites.add(new Site(corrigeEndereco("http://www.ifsp.edu.br"), R.drawable.icone_favorito_on));
-        listaSites.add(new Site(corrigeEndereco("http://www.ifspsaocarlos.edu.br"), R.drawable.icone_favorito_on));
+        sharedPreferences = getSharedPreferences("SitesInteressantes", Context.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
+        sitesURL = sharedPreferences.getStringSet("sitesURL", new HashSet<String>());
+        for (String siteUrl :
+                sitesURL) {
+            listaSites.add(new Site(corrigeEndereco(siteUrl), sharedPreferences.getInt(siteUrl, R.drawable.icone_favorito_off)));
+        }
         // Cria o adaptador que preencherá as células da tela com o conteúdo da lista
         ListAdapter adaptador = new ListaSitesAdapter(this, listaSites);
         setListAdapter(adaptador);
@@ -47,14 +63,11 @@ public class ListaSitesActivity extends ListActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
-        // Pega o item na posição da lista da adaptador e converte em um objeto do tipo Site
-        Site site = (Site) getListAdapter().getItem(position);
-        // Abre o navegador com a URL do objeto recuperado
-        Intent intencaoNavegador = new Intent(Intent.ACTION_VIEW, Uri.parse(site.getUrl()));
-        startActivityForResult(intencaoNavegador, INTENT_NAVEGADOR);
+    protected void onClickTextView(View view) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(((TextView) view).getText().toString()));
+        startActivityForResult(intent, INTENT_NAVEGADOR);
     }
+
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -72,6 +85,11 @@ public class ListaSitesActivity extends ListActivity {
                     ListAdapter adaptador = new ListaSitesAdapter(this, listaSites);
                     setListAdapter(adaptador);
                     Toast.makeText(this, "Novo site adicionado.", Toast.LENGTH_SHORT).show();
+
+                    sitesURL.add(novoSite.getUrl());
+                    editor.putStringSet("sitesURL", sitesURL);
+                    editor.putInt(novoSite.getUrl(), novoSite.getImagemFavorito());
+                    editor.commit();
                     break;
                 case RESULT_CANCELED:
                     Toast.makeText(this, "Ação cancelada.", Toast.LENGTH_SHORT).show();
@@ -81,6 +99,21 @@ public class ListaSitesActivity extends ListActivity {
                     break;
             }
         }
+    }
+
+    protected void onClickImageView(View view) {
+        ImageView imageView = (ImageView) view;
+        Site site = listaSites.get(imageView.getLabelFor());
+        if (site.getImagemFavorito() == R.drawable.icone_favorito_on) {
+            imageView.setImageResource(R.drawable.icone_favorito_off);
+            site.setImagemFavorito(R.drawable.icone_favorito_off);
+        } else if (site.getImagemFavorito() == R.drawable.icone_favorito_off) {
+            imageView.setImageResource(R.drawable.icone_favorito_on);
+            site.setImagemFavorito(R.drawable.icone_favorito_on);
+        }
+        editor.putInt(site.getUrl(), site.getImagemFavorito());
+        editor.commit();
+        ((ArrayAdapter) getListView().getAdapter()).notifyDataSetChanged();
     }
 
     private String corrigeEndereco(String endereco) {
